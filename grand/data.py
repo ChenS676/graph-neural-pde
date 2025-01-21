@@ -36,20 +36,7 @@ def get_dataset(opt: dict, data_dir, use_lcc: bool = False) -> InMemoryDataset:
   path = os.path.join(data_dir, ds)
   if ds in ['Cora', 'Citeseer', 'Pubmed']:
     dataset = Planetoid(path, ds)
-  elif ds in ['Computers', 'Photo']:
-    dataset = Amazon(path, ds)
-  elif ds == 'CoauthorCS':
-    dataset = Coauthor(path, 'CS')
-  elif ds in ['cornell', 'texas', 'wisconsin']:
-    dataset = WebKB(root=path, name=ds, transform=T.NormalizeFeatures())
-  elif ds in ['chameleon', 'squirrel']:
-    dataset = WikipediaNetwork(root=path, name=ds, transform=T.NormalizeFeatures())
-  elif ds == 'film':
-    dataset = Actor(root=path, transform=T.NormalizeFeatures())
-  elif ds == 'ogbn-arxiv':
-    dataset = PygNodePropPredDataset(name=ds, root=path,
-                                     transform=T.ToSparseTensor())
-    use_lcc = False  # never need to calculate the lcc with ogb datasets
+    use_lcc = True  # never need to calculate the lcc with ogb datasets
   else:
     raise Exception('Unknown dataset.')
 
@@ -72,26 +59,12 @@ def get_dataset(opt: dict, data_dir, use_lcc: bool = False) -> InMemoryDataset:
       val_mask=torch.zeros(y_new.size()[0], dtype=torch.bool)
     )
     dataset.data = data
-  if opt['rewiring'] is not None:
-    dataset.data = rewire(dataset.data, opt, data_dir)
+
   train_mask_exists = True
   try:
     dataset.data.train_mask
   except AttributeError:
     train_mask_exists = False
-
-  if ds == 'ogbn-arxiv':
-    split_idx = dataset.get_idx_split()
-    ei = to_undirected(dataset.data.edge_index)
-    data = Data(
-    x=dataset.data.x,
-    edge_index=ei,
-    y=dataset.data.y,
-    train_mask=split_idx['train'],
-    test_mask=split_idx['test'],
-    val_mask=split_idx['valid'])
-    dataset.data = data
-    train_mask_exists = True
 
   #todo this currently breaks with heterophilic datasets if you don't pass --geom_gcn_splits
   if (use_lcc or not train_mask_exists): # and not opt['geom_gcn_splits']

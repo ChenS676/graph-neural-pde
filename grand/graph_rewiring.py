@@ -14,9 +14,10 @@ from utils import get_rw_adj, get_full_adjacency, ROOT_DIR
 from pykeops.torch import LazyTensor
 import os
 import pickle
+
 from distances_kNN import apply_dist_KNN, apply_dist_threshold, get_distances, apply_feat_KNN
 from hyperbolic_distances import hyperbolize
-
+import numba
 ### for custom GDC
 import torch
 # import numba

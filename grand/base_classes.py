@@ -2,35 +2,10 @@ import torch
 from torch import nn
 from torch_geometric.nn.conv import MessagePassing
 from utils import Meter
-from regularized_ODE_function import RegularizedODEfunc
-import regularized_ODE_function as reg_lib
 import six
 
-
-REGULARIZATION_FNS = {
-    "kinetic_energy": reg_lib.quadratic_cost,
-    "jacobian_norm2": reg_lib.jacobian_frobenius_regularization_fn,
-    "total_deriv": reg_lib.total_derivative,
-    "directional_penalty": reg_lib.directional_derivative
-}
-
-
-def create_regularization_fns(args):
-    regularization_fns = []
-    regularization_coeffs = []
-
-    for arg_key, reg_fn in six.iteritems(REGULARIZATION_FNS):
-        if args[arg_key] is not None:
-            regularization_fns.append(reg_fn)
-            regularization_coeffs.append(args[arg_key])
-
-    regularization_fns = regularization_fns
-    regularization_coeffs = regularization_coeffs
-    return regularization_fns, regularization_coeffs
-
-
 class ODEblock(nn.Module):
-  def __init__(self, odefunc, regularization_fns, opt, data, device, t):
+  def __init__(self, odefunc, opt, data, device, t):
     super(ODEblock, self).__init__()
     self.opt = opt
     self.t = t
@@ -38,8 +13,8 @@ class ODEblock(nn.Module):
     self.aug_dim = 2 if opt['augment'] else 1
     self.odefunc = odefunc(self.aug_dim * opt['hidden_dim'], self.aug_dim * opt['hidden_dim'], opt, data, device)
     
-    self.nreg = len(regularization_fns)
-    self.reg_odefunc = RegularizedODEfunc(self.odefunc, regularization_fns)
+    # self.nreg = len(regularization_fns)
+    # self.reg_odefunc = RegularizedODEfunc(self.odefunc, regularization_fns)
 
     if opt['adjoint']:
       from torchdiffeq import odeint_adjoint as odeint
@@ -51,7 +26,6 @@ class ODEblock(nn.Module):
 
   def set_x0(self, x0):
     self.odefunc.x0 = x0.clone().detach()
-    self.reg_odefunc.odefunc.x0 = x0.clone().detach()
 
   def set_tol(self):
     self.atol = self.opt['tol_scale'] * 1e-7
@@ -107,21 +81,9 @@ class BaseGNN(MessagePassing):
     self.fm = Meter()
     self.bm = Meter()
 
-    if opt['beltrami']:
-      self.mx = nn.Linear(self.num_features, opt['feat_hidden_dim'])
-      self.mp = nn.Linear(opt['pos_enc_dim'], opt['pos_enc_hidden_dim'])
-      opt['hidden_dim'] = opt['feat_hidden_dim'] + opt['pos_enc_hidden_dim']
-    else:
-      self.m1 = nn.Linear(self.num_features, opt['hidden_dim'])
+    self.m1 = nn.Linear(self.num_features, opt['hidden_dim'])
 
-    if self.opt['use_mlp']:
-      self.m11 = nn.Linear(opt['hidden_dim'], opt['hidden_dim'])
-      self.m12 = nn.Linear(opt['hidden_dim'], opt['hidden_dim'])
-    if opt['use_labels']:
-      # todo - fastest way to propagate this everywhere, but error prone - refactor later
-      opt['hidden_dim'] = opt['hidden_dim'] + dataset.num_classes
-    else:
-      self.hidden_dim = opt['hidden_dim']
+    self.hidden_dim = opt['hidden_dim']
     if opt['fc_out']:
       self.fc = nn.Linear(opt['hidden_dim'], opt['hidden_dim'])
     self.m2 = nn.Linear(opt['hidden_dim'], dataset.num_classes)
@@ -129,14 +91,14 @@ class BaseGNN(MessagePassing):
       self.bn_in = torch.nn.BatchNorm1d(opt['hidden_dim'])
       self.bn_out = torch.nn.BatchNorm1d(opt['hidden_dim'])
 
-    self.regularization_fns, self.regularization_coeffs = create_regularization_fns(self.opt)
-
+    # self.regularization_fns, self.regularization_coeffs = create_regularization_fns(self.opt)
+  #TODO NFE what is this 
   def getNFE(self):
-    return self.odeblock.odefunc.nfe + self.odeblock.reg_odefunc.odefunc.nfe
+    return self.odeblock.odefunc.nfe # + self.odeblock.reg_odefunc.odefunc.nfe
 
   def resetNFE(self):
     self.odeblock.odefunc.nfe = 0
-    self.odeblock.reg_odefunc.odefunc.nfe = 0
+    # self.odeblock.reg_odefunc.odefunc.nfe = 0
 
   def reset(self):
     self.m1.reset_parameters()
