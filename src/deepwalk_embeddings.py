@@ -95,8 +95,9 @@ if __name__ == "__main__":
   parser.add_argument('--gpu', type=int, default=0, 
                         help='GPU id (default 0)')
   parser.add_argument("--not_lcc", action="store_false", help="don't use the largest connected component")
-
-
+  parser.add_argument('--geom_gcn_splits', dest='geom_gcn_splits', action='store_true',
+                      help='use the 10 fixed splits from '
+                           'https://arxiv.org/abs/2002.05287')
   args = parser.parse_args()
   opt = vars(args)
   opt['rewiring'] = None

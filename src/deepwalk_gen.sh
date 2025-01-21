@@ -10,7 +10,7 @@ python deepwalk_embeddings.py --dataset Computers --embedding_dim 64 --walk_leng
 python deepwalk_embeddings.py --dataset Computers --embedding_dim 128 --walk_length 100
 python deepwalk_embeddings.py --dataset Computers --embedding_dim 256 --walk_length 40
 
-python deepwalk_embeddings.py --dataset Cora --embedding_dim 64 --walk_length 80
+python deepwalk_embeddings.py --dataset Cora --embedding_dim 64 --walk_length 80 --geom_gcn_splits
 python deepwalk_embeddings.py --dataset Cora --embedding_dim 128 --walk_length 40
 python deepwalk_embeddings.py --dataset Cora --embedding_dim 256 --walk_length 40
 

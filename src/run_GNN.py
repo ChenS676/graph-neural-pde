@@ -63,12 +63,12 @@ def train(model, optimizer, data, pos_encoding=None):
   model.train()
   optimizer.zero_grad()
   feat = data.x
-  if model.opt['use_labels']:
-    train_label_idx, train_pred_idx = get_label_masks(data, model.opt['label_rate'])
+  # if model.opt['use_labels']:
+  #   train_label_idx, train_pred_idx = get_label_masks(data, model.opt['label_rate'])
 
-    feat = add_labels(feat, data.y, train_label_idx, model.num_classes, model.device)
-  else:
-    train_pred_idx = data.train_mask
+  #   feat = add_labels(feat, data.y, train_label_idx, model.num_classes, model.device)
+  # else:
+  train_pred_idx = data.train_mask
 
   out = model(feat, pos_encoding)
 
@@ -223,16 +223,17 @@ def main(cmd_opt):
   dataset = get_dataset(opt, f'{ROOT_DIR}/data', opt['not_lcc'])
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-  if opt['beltrami']:
-    pos_encoding = apply_beltrami(dataset.data, opt).to(device)
-    opt['pos_enc_dim'] = pos_encoding.shape[1]
-  else:
-    pos_encoding = None
+  # if opt['beltrami']:
+  #   pos_encoding = apply_beltrami(dataset.data, opt).to(device)
+  #   opt['pos_enc_dim'] = pos_encoding.shape[1]
+  # else:
+  #  
+  pos_encoding = None
 
-  if opt['rewire_KNN'] or opt['fa_layer']:
-    model = GNN_KNN(opt, dataset, device).to(device) if opt["no_early"] else GNNKNNEarly(opt, dataset, device).to(device)
-  else:
-    model = GNN(opt, dataset, device).to(device) if opt["no_early"] else GNNEarly(opt, dataset, device).to(device)
+  # if opt['rewire_KNN'] or opt['fa_layer']:
+  #   model = GNN_KNN(opt, dataset, device).to(device) if opt["no_early"] else GNNKNNEarly(opt, dataset, device).to(device)
+  # else:
+  model = GNN(opt, dataset, device).to(device) if opt["no_early"] else GNNEarly(opt, dataset, device).to(device)
 
   if not opt['planetoid_split'] and opt['dataset'] in ['Cora','Citeseer','Pubmed']:
     dataset.data = set_train_val_test_split(np.random.randint(0, 1000), dataset.data, num_development=5000 if opt["dataset"] == "CoauthorCS" else 1500)
@@ -249,9 +250,9 @@ def main(cmd_opt):
   for epoch in range(1, opt['epoch']):
     start_time = time.time()
 
-    if opt['rewire_KNN'] and epoch % opt['rewire_KNN_epoch'] == 0 and epoch != 0:
-      ei = apply_KNN(data, pos_encoding, model, opt)
-      model.odeblock.odefunc.edge_index = ei
+    # if opt['rewire_KNN'] and epoch % opt['rewire_KNN_epoch'] == 0 and epoch != 0:
+    #   ei = apply_KNN(data, pos_encoding, model, opt)
+    #   model.odeblock.odefunc.edge_index = ei
 
     loss = train(model, optimizer, data, pos_encoding)
     tmp_train_acc, tmp_val_acc, tmp_test_acc = this_test(model, data, pos_encoding, opt)

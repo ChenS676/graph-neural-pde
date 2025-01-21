@@ -19,7 +19,7 @@ from hyperbolic_distances import hyperbolize
 
 ### for custom GDC
 import torch
-import numba
+# import numba
 import numpy as np
 from scipy.linalg import expm
 from torch_geometric.utils import add_self_loops, is_undirected, to_dense_adj, \

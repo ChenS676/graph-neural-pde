@@ -53,8 +53,6 @@ if __name__ == "__main__":
                         help='Cora, Citeseer, Pubmed, Computers, Photo, CoauthorCS, ogbn-arxiv')
   parser.add_argument('--embedding_dim', type=int, default=0,
                         help='Embedding dimension')
-
-
   args = parser.parse_args()
   opt = vars(args)
   main(opt)

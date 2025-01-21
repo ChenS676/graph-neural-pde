@@ -31,6 +31,7 @@ def set_block(opt):
   return block
 
 
+
 def set_function(opt):
   ode_str = opt['function']
   if ode_str == 'laplacian':
