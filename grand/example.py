@@ -1,7 +1,7 @@
 import torch
 from torchdiffeq import odeint
 
-# Define the ODE function
+# Define the ODE function function only depends on y but not t
 class ODEFunc(torch.nn.Module):
     def forward(self, t, y):
         return -2 * y

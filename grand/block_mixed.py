@@ -27,6 +27,7 @@ class MixedODEblock(ODEblock):
                            opt, 
                            data, 
                            device)
+    # Do you need this? 
     edge_index, edge_weight = get_rw_adj(data.edge_index, 
                                          edge_weight=data.edge_attr, 
                                          norm_dim=1,
@@ -54,13 +55,13 @@ class MixedODEblock(ODEblock):
     gamma = torch.sigmoid(self.gamma)
     attention = self.get_attention_weights(x)
     # gamma balance between original edge weight and attention
+    # does it change the edge_index too? 
     mixed_attention = attention.mean(dim=1) * (1 - gamma) + self.odefunc.edge_weight * gamma
     return mixed_attention
 
   def forward(self, x):
     t = self.t.type_as(x)
     self.odefunc.attention_weights = self.get_mixed_attention(x) #\bar A(X)
-    print(f"max, min of odefunc attention: {self.odefunc.attention_weights.max().item(), self.odefunc.attention_weights.min().item()}")
 
     z = odeint(
       self.odefunc, x, t,
@@ -100,12 +101,14 @@ class LaplacianODEFunc(ODEFunc):
     self.beta_sc = nn.Parameter(torch.ones(1))
 
   def sparse_multiply(self, x):
+    # import pdb; pdb.set_trace()
     if self.opt['block'] in ['attention']:  # adj is a multihead attention
+      # this does not work
       mean_attention = self.attention_weights.mean(dim=1)
       ax = torch_sparse.spmm(self.edge_index, mean_attention, x.shape[0], x.shape[0], x)
-    elif self.opt['block'] in ['mixed', 'hard_attention']:  # adj is a torch sparse matrix
+    elif self.opt['block'] in ['mixed', 'hard_attention']: 
       ax = torch_sparse.spmm(self.edge_index, self.attention_weights, x.shape[0], x.shape[0], x)
-    else:  # adj is a torch sparse matrix
+    else:  # constant 
       ax = torch_sparse.spmm(self.edge_index, self.edge_weight, x.shape[0], x.shape[0], x)
     return ax
 
@@ -113,11 +116,8 @@ class LaplacianODEFunc(ODEFunc):
     if self.nfe > self.opt["max_nfe"]:
       raise MaxNFEException
     self.nfe += 1
-    ax = self.sparse_multiply(x)
-    if not self.opt['no_alpha_sigmoid']:
-      alpha = torch.sigmoid(self.alpha_train)
-    else:
-      alpha = self.alpha_train
+    ax = self.sparse_multiply(x) 
+    alpha = torch.sigmoid(self.alpha_train)
 
     f = alpha * (ax - x)
     if self.opt['add_source']:
@@ -246,20 +246,18 @@ class SpGraphTransAttentionLayer(nn.Module):
       v = self.V(x)
 
       # perform linear operation and split into h heads
-
       k = k.view(-1, self.h, self.d_k)
       q = q.view(-1, self.h, self.d_k)
       v = v.view(-1, self.h, self.d_k)
 
       # transpose to get dimensions [n_nodes, attention_dim, n_heads]
-
       k = k.transpose(1, 2)
       q = q.transpose(1, 2)
       v = v.transpose(1, 2)
-
       src = q[edge[0, :], :, :]
       dst_k = k[edge[1, :], :, :]
 
+    # prods = Q(X) \cdot K(X) -  A = (a(Xi, Xj))
     if not self.opt['beltrami'] and self.opt['attention_type'] == "exp_kernel":
       prods = self.output_var ** 2 * torch.exp(-(torch.sum((src - dst_k) ** 2, dim=1) / (2 * self.lengthscale ** 2)))
     elif self.opt['attention_type'] == "scaled_dot":
