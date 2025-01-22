@@ -9,7 +9,9 @@ from GNN import GNN
 from data import get_dataset, set_train_val_test_split
 from best_params import best_params_dict
 from utils import ROOT_DIR
-
+"""
+There is only train, eval loop.
+"""
 def get_optimizer(name, parameters, lr, weight_decay=0):
   if name == 'sgd':
     return torch.optim.SGD(parameters, lr=lr, weight_decay=weight_decay)
@@ -23,15 +25,6 @@ def get_optimizer(name, parameters, lr, weight_decay=0):
     return torch.optim.Adamax(parameters, lr=lr, weight_decay=weight_decay)
   else:
     raise Exception("Unsupported optimizer: {}".format(name))
-
-
-def add_labels(feat, labels, idx, num_classes, device):
-  onehot = torch.zeros([feat.shape[0], num_classes]).to(device)
-  if idx.dtype == torch.bool:
-    idx = torch.where(idx)[0]  # convert mask to linear index
-  onehot[idx, labels.squeeze()[idx]] = 1
-
-  return torch.cat([feat, onehot], dim=-1)
 
 
 def train(model, optimizer, data, pos_encoding=None):
@@ -111,14 +104,12 @@ def main(cmd_opt):
 
   # used in beltrami
   pos_encoding = None
-
   model = GNN(opt, dataset, device).to(device) 
 
   if not opt['planetoid_split'] and opt['dataset'] in ['Cora','Citeseer','Pubmed']:
     dataset.data = set_train_val_test_split(np.random.randint(0, 1000), dataset.data, num_development=5000 if opt["dataset"] == "CoauthorCS" else 1500)
 
   data = dataset.data.to(device)
-
   parameters = [p for p in model.parameters() if p.requires_grad]
   print_model_params(model)
   optimizer = get_optimizer(opt['optimizer'], parameters, lr=opt['lr'], weight_decay=opt['decay'])
@@ -126,7 +117,6 @@ def main(cmd_opt):
 
   for epoch in range(1, opt['epoch']):
     start_time = time.time()
-
     loss = train(model, optimizer, data, pos_encoding)
     tmp_train_acc, tmp_val_acc, tmp_test_acc = test(model, data, pos_encoding, opt)
 
@@ -141,8 +131,7 @@ def main(cmd_opt):
 
     print(log.format(epoch, time.time() - start_time, loss, model.fm.sum, model.bm.sum, train_acc, val_acc, test_acc, best_time))
   print('best val accuracy {:03f} with test accuracy {:03f} at epoch {:d} and best time {:03f}'.format(val_acc, test_acc,
-                                                                                                     best_epoch,
-                                                                                                     best_time))
+                                                                                                     best_epoch,                                                                                                 best_time))
   return train_acc, val_acc, test_acc
 
 

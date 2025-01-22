@@ -9,26 +9,20 @@ import numpy as np
 import torch
 from torch_geometric.data import Data, InMemoryDataset
 from torch_geometric.datasets import Planetoid, Amazon, Coauthor
-from graph_rewiring import get_two_hop, apply_gdc
-from ogb.nodeproppred import PygNodePropPredDataset
-import torch_geometric.transforms as T
-from torch_geometric.utils import to_undirected
-from graph_rewiring import make_symmetric, apply_pos_dist_rewire
-from heterophilic import WebKB, WikipediaNetwork, Actor
 from utils import ROOT_DIR
 
 DATA_PATH = f'{ROOT_DIR}/data'
 
 
-def rewire(data, opt, data_dir):
-  rw = opt['rewiring']
-  if rw == 'two_hop':
-    data = get_two_hop(data)
-  elif rw == 'gdc':
-    data = apply_gdc(data, opt)
-  elif rw == 'pos_enc_knn':
-    data = apply_pos_dist_rewire(data, opt, data_dir)
-  return data
+# def rewire(data, opt, data_dir):
+#   rw = opt['rewiring']
+#   if rw == 'two_hop':
+#     data = get_two_hop(data)
+#   elif rw == 'gdc':
+#     data = apply_gdc(data, opt)
+#   elif rw == 'pos_enc_knn':
+#     data = apply_pos_dist_rewire(data, opt, data_dir)
+#   return data
 
 
 def get_dataset(opt: dict, data_dir, use_lcc: bool = False) -> InMemoryDataset:
@@ -145,3 +139,4 @@ def set_train_val_test_split(
   data.test_mask = get_mask(test_idx)
 
   return data
+
